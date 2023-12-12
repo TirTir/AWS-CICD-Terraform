@@ -1,0 +1,38 @@
+version: 0.2
+env:
+  variables:
+    APP_ENV: "dev"
+    AWS_REGION: "us-east-2"
+    AWS_ACCOUNT_ID: "035574589515"
+phases:
+  install:
+    commands:
+      - echo "install kubectl and set config"
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - mkdir ~/.kube
+      - aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+  pre_build:
+    commands:
+      - echo "export some envs and printenv"
+      - GIT_TAG=$(git describe --tags --abbrev=0)
+      - COMMIT_SHA_SIX=$(git rev-parse $GIT_TAG | cut -c 1-6)
+      - ECR_REPO_NAME="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sample-pipeline"
+      - IMAGE_TAG="fastapiv0.100.0-py3.11-$GIT_TAG-$COMMIT_SHA_SIX"
+      - EKS_NAMESPACE="sample-pipeline-$APP_ENV"
+      - MANIFEST_PATH="env/delivery/$APP_ENV/manifests"
+      - printenv | sort
+      - echo "check namespace exists and create if not"
+      - kubectl get ns | grep -q "$EKS_NAMESPACE" || kubectl create ns $EKS_NAMESPACE
+      - echo "log in to Amazon ECR"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - echo "change image tag in deployment.yaml"
+      - sed -i "s/<update_here>/$IMAGE_TAG/" "$MANIFEST_PATH/deployment.yaml"
+      - echo "apply manifests"
+      - kubectl apply -f $MANIFEST_PATH/.
+  post_build:
+    commands:
+      - echo "completed this action"

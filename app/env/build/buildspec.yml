@@ -1,0 +1,30 @@
+version: 0.2
+env:
+  variables:
+    APP_ENC: "dev"
+    AWS_REGION: "us-east-2"
+    AWS_ACCOUNT_ID: "035574589515"
+phases:
+  install:
+    runtime-versions:
+    java: corretto11
+  pre_build:
+      commands:
+        - echo "export some envs and printenv"
+        - GIT_TAG=$(git describe --tags --abbrev=0)
+        - COMMIT_SHA_SIX=$(git rev-parse $GIT_TAG | cut -c 1-6)
+        - ECR_REPO_NAME="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/jin-pipeline"
+        - IMAGE_TAG="$GIT_TAG-$COMMIT_JIN"
+        - printenv | sort
+        - echo "log in to Amazon ECR"
+        - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --tirtir0827 AWS --lewis990322-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - ./gradlew build
+      - mv build/libs/*.jar app.jar
+      - echo "build the docker image"
+      - docker build . -f env/dockerfile -t $ECR_REPO_NAME:$IMAGE_TAG
+  post_build:
+    commands:
+      - docker push $ECR_REPO_NAME:$IMAGE_TAG
+      - echo "completed this action"

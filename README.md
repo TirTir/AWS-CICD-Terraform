@@ -52,9 +52,7 @@ AWS에서는 CI/CD를 구축하기 위해 네 가지 서비스를 이용할 수 
 </p>
 
 #### * ECR (EC2 Container Registry)
-개발자가 Docker 컨테이너 이미지를 손쉽게 저장, 관리 및 배포할
-수 있게 해주는 완전관리형 Docker 컨테이너 레지스토리
-- 개발자가 Git Repository에 푸시(push)하면, Git에서 AWS CodeCommit으로 코드가 전송됩니다. 
+개발자가 Docker 컨테이너 이미지를 손쉽게 저장, 관리 및 배포할 수 있게 해주는 완전관리형 Docker 컨테이너 레지스토리
 
 <p>
   <br/>
